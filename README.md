@@ -5,7 +5,7 @@ Reference implementation and saved results for the paper:
 > **The ROC–PR Divergence and Threshold Transferability: A Cost-Calibrated
 > Evaluation Protocol for Fraud Detection**
 > *International Journal of Data Science and Analytics* (revised version).
-> Code release **`v2.0`** (the version cited in the paper's *Code availability*).
+> Code release **`v2.1`** (the version cited in the paper's *Code availability*; see *Changes in v2.1*).
 
 C3E is an evaluation **protocol**, not a new classifier: chronological
 train/validation/test splitting, leakage-free preprocessing, optional monotone
@@ -27,15 +27,20 @@ C3E-fraud-detection/
 │                                    (float32 cast, median imputer, scaler fitted on train only),
 │                                    the four core trainers, uniform-grid threshold selection
 ├── c3e_contribution3.py             CatBoost / IF-Hybrid trainers, Temperature Scaling, Beta
-│                                    Calibration (eps = 1e-7 clip), ECE (10 bins), cost regimes
+│                                    Calibration (eps = 1e-7 clip), ECE (10 bins, last closed at 1),
+│                                    cost regimes (log cost without floor)
 ├── c3e_datasets_d5_d6.py            loaders for Elliptic (D5) and Give Me Some Credit (D6)
-├── c3e_contribution4_nlp.py         text-representation probe (negative result, Section 6.4)
+├── c3e_contribution4_nlp.py         text-representation probe (withdrawn from the paper, kept for the record)
 ├── C3E_master_notebook.ipynb        the full pipeline: trains every model on the six benchmarks
-│                                    (five seeds), runs the D1 extended comparison, NLP probe,
+│                                    (five seeds), runs the D1 extended comparison, the text probe
+│                                    (not used in the paper),
 │                                    Friedman/Wilcoxon tests, bootstrap CIs
-├── reproduce_tables_8_10.ipynb      RETRAINS NOTHING: regenerates Tables 7, 8, 9, 10 and the
-│                                    controls of Section 6.2 from the saved scores (see below)
-├── make_figures.py                  regenerates Fig. 1, 2, 3, 4, 7, 8, 9, 10, 11 from results/
+├── reproduce_tables_8_10.ipynb      RETRAINS NOTHING: regenerates Tables 6, 7, 8, 9, 10, the D1
+│                                    rows of Table 11, the controls of Section 6.2 and the
+│                                    null-model audit of the 26 pairs (Section 7.3) from the saved
+│                                    results (see below)
+├── make_figures.py                  regenerates Fig. 1, 2, 3, 4, 7, 8, 9, 10 from results/
+├── make_figures_5_6_11.py           regenerates Fig. 5, 6 and 11 (run after make_figures.py)
 ├── results/
 │   ├── scores/
 │   │   ├── scores_d1_seed42.npz              raw validation + test scores, D1, six models, seed 42,
@@ -43,9 +48,11 @@ C3E-fraud-detection/
 │   │   ├── scores_d1_seed42_calibrated.npz   the same after Temperature Scaling and Beta Calibration
 │   │   ├── scores_d1_seed42_val.csv          raw / TS / Beta validation scores, one column per model
 │   │   └── scores_d1_seed42_test.csv         idem, test split
-│   ├── c3e_all_seeds_raw.csv        every (dataset, model, seed) row of the six-dataset benchmark
+│   ├── c3e_all_seeds_raw.csv        every (dataset, model, seed) row of the six-dataset benchmark,
+│   │                                with the confusion counts at the frozen threshold
 │   ├── c3e_seed_aggregated.csv      five-seed mean ± std  -> Table 5
 │   ├── friedman_summary.csv         Wilcoxon pairwise tests (reference XGB)  -> Table 6
+│   ├── tab6_wilcoxon_holm.csv       the same with the Holm-adjusted p-values  -> Table 6
 │   ├── tab7_extended_d1.csv         D1 extended comparison from the saved scores  -> Table 7
 │   ├── tab8_gridres.csv             threshold-grid audit  -> Table 8
 │   ├── tab9_costregimes.csv         fixed vs logarithmic regime  -> Table 9
@@ -54,11 +61,11 @@ C3E-fraud-detection/
 │   ├── tab10_screening.csv          flagged / missed / needless counts, κ ∈ {1.5, 2, 5}  -> Table 10
 │   ├── tab_eps_sensitivity.csv      ε sweep 1e-6 … 1e-15 and the rank-map control (Section 6.2)
 │   ├── tab_delta_after_calibration.csv   Δ on raw vs mapped scores (Section 6.2)
-│   ├── tab_counterexample.csv       Remark 3.3: counter-example and the 2,000-draw simulation
+│   ├── tab_counterexample.csv       Remark 3.3 / Proposition 3.3(ii): the two examples and the 2,000-draw simulation
+│   ├── null_model_audit.csv         cost against C_FN · N1_test and flagged counts, 26 pairs × 5 seeds
 │   ├── c3e_bootstrap_ci_all.csv     bootstrap 95 % CIs, 26 pairs, seed 42  -> Table 11
-│   └── c3e_nlp_ieee_cis.csv, c3e_nlp_paysim.csv    NLP probe  -> Section 6.4
+│   └── c3e_nlp_ieee_cis.csv, c3e_nlp_paysim.csv    text probe (not used in the paper)
 └── figures/                         Fig1.pdf … Fig11.pdf as included in the manuscript
-                                     (Fig5 and Fig6 come from the master notebook)
 ```
 
 The six datasets are public and are **not** redistributed here (see *Datasets*).
@@ -71,6 +78,7 @@ The six datasets are public and are **not** redistributed here (see *Datasets*).
 pip install numpy pandas scipy scikit-learn matplotlib jupyter
 jupyter nbconvert --to notebook --execute reproduce_tables_8_10.ipynb
 python make_figures.py .
+python make_figures_5_6_11.py . figures
 ```
 
 `reproduce_tables_8_10.ipynb` reads `results/scores/scores_d1_seed42.npz` and
@@ -81,10 +89,12 @@ minimised, the number of tied minimisers, the number of test transactions
 flagged, the test cost, the oracle cost and the null-model cost 750 =
 C_FN · N1_test); the ε sweep and the strictly increasing rank map; Δ on raw and
 mapped scores; the Reviewer-2 counter-example and the 2,000-draw simulation of
-Remark 3.3 (`np.random.default_rng(42)`; 6.0 % degraded, 5.8 % improved); the
-26 pairs with their Δ, cost and costly/regular label, and the κ sweep of
-Table 10; Table 9 and the three regimes of Fig. 11. Its last cell asserts every
-number quoted in the paper against the regenerated values.
+Remark 3.3 (`np.random.default_rng(42)`; 5.95 % degraded, 5.85 % improved) and
+the two-score example of Proposition 3.3(ii); the 26 pairs with their Δ, cost and
+costly/regular label, and the κ sweep of Table 10; the null-model audit of the 26
+pairs; Table 6 (Friedman, exact Wilcoxon, Holm); the D1 rows of Table 11; Table 9
+and the three regimes of Fig. 11. Its last cell asserts the main quoted numbers
+against the regenerated values.
 
 The two post-hoc maps are copied verbatim into the notebook from
 `c3e_contribution3.py`, so the notebook needs neither LightGBM, XGBoost nor
@@ -132,8 +142,8 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
   pipeline's `prepare_splits` (features cast to float32 before imputation and
   scaling) it yields 21 distinct validation scores and a test cost of 1,858;
   an earlier grid-resolution cell that re-implemented the preprocessing
-  without the cast obtained 26 distinct values and a cost of 4,938. All
-  reported D1 numbers use the pipeline path.
+  without the cast obtained 26 distinct values (the count reported in the
+  first submitted version). All reported D1 numbers use the pipeline path.
 
 ---
 
@@ -144,7 +154,7 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
 | D1 | creditcard | https://www.kaggle.com/mlg-ulb/creditcardfraud | `creditcard.csv` |
 | D2 | IEEE-CIS | https://www.kaggle.com/c/ieee-fraud-detection | `train_transaction.csv`, `train_identity.csv` |
 | D3 | BAF (NeurIPS 2022) | https://www.kaggle.com/datasets/sgpjesus/bank-account-fraud-dataset-neurips-2022 | `Base.csv` |
-| D4 | PaySim | https://www.kaggle.com/ntnu-testimon/paysim1 | `PS_*.csv` |
+| D4 | PaySim | https://www.kaggle.com/datasets/ealaxi/paysim1 | `PS_*.csv` |
 | D5 | Elliptic Bitcoin | https://www.kaggle.com/ellipticco/elliptic-data-set | `elliptic_txs_*.csv` |
 | D6 | Give Me Some Credit | https://www.kaggle.com/c/GiveMeSomeCredit | `cs-training.csv` |
 
@@ -165,9 +175,40 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
   cost of flagging nothing (750 on D1); a frozen threshold that flags no
   instance is reported as such, not as an improvement.
 - **Bootstrap:** 95 % confidence intervals, 1000 resamples of the test split.
-- **ECE:** 10 equal-width bins on the validation split.
+- **ECE:** 10 equal-width bins [0, 0.1), …, [0.8, 0.9), [0.9, 1] on the validation split.
+- **Model inputs:** features are cast to float32; the label, the ordering field (Time,
+  TransactionDT, month, step, time step, row order) and identifiers are not inputs; categorical
+  fields are coded as integers on the whole file (no label used); on D6 the three past-due
+  counts are capped at 30. Inputs per dataset: D1 29, D2 431, D3 30, D4 2 (type, amount),
+  D5 165, D6 10.
+- **DNN rows:** `c3e_all_seeds_raw.csv` and `c3e_seed_aggregated.csv` also hold the rows of a
+  DNN that the paper does not report; all paper tables exclude them.
+- **Saved scores:** `results/scores/` holds the D1 scores of the six configurations at seed 42
+  (Tables 7–9, Figs. 9–11); for the six-dataset benchmark the release keeps, per seed, the
+  frozen threshold and the confusion counts (`c3e_all_seeds_raw.csv`), not the scores.
 
 ---
+
+## Changes in v2.1
+
+* **ECE.** `calibration_metrics` (and its copy in the notebook) used half-open bins [lo, hi), so
+  scores equal to 1 were left out of the ECE. On D1 this affected only raw LightGBM (2,031 of
+  56,961 validation scores equal 1): its ECE is 0.035, not 0.000 (Table 7, Fig. 9). The last
+  bin is now closed at 1; every other ECE value is unchanged.
+* **Logarithmic cost.** `cost_amount_log` no longer floors log(1 + Amount) at 1, as defined in
+  the paper; Table 9 and Fig. 11 already used the unfloored cost.
+* **Reproduction notebook.** New sections: 7b, the null-model audit of the 26 pairs
+  (LightGBM on D1 and D4 and logistic regression on D4 reach or exceed C_FN · N1_test in every
+  seed); 7c, Table 6 with the Holm adjustment; 7d, the D1 rows of Table 11, which the release's
+  bootstrap routine reproduces from the saved scores. Section 6 adds the two-score example of
+  Proposition 3.3(ii).
+* **Figures.** `make_figures_5_6_11.py` added; Fig. 7 uses the prevalences of Table 1; Fig. 9
+  shows the corrected ECE; Fig. 3 labels the pairs outside the six-dataset benchmark "n/a";
+  the key of Fig. 2 reads "A strictly increasing recalibration cannot change Δ".
+* **requirements.txt** now pins the versions used for the paper (Table 4); gensim and
+  tensorflow are listed as optional, since no result of the paper needs them.
+* **Master notebook.** Markdown only: release number, the withdrawn text probe, and the source
+  of Table 6 (the first-version statistics cell is kept but not used).
 
 ## Citation
 
@@ -179,7 +220,7 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
              and Ouatik El Alaoui, Said},
   journal = {International Journal of Data Science and Analytics},
   year    = {2026},
-  note    = {Under review; code release v2.0}
+  note    = {Under review; code release v2.1}
 }
 ```
 

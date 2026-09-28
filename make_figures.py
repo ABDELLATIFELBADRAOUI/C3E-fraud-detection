@@ -42,8 +42,8 @@ DS_LABEL = {"creditcard": "D1 creditcard", "ieee_cis": "D2 IEEE-CIS", "baf": "D3
             "paysim": "D4 PaySim", "elliptic": "D5 Elliptic", "giveme": "D6 GiveMeSomeCredit"}
 DS_COLOR = dict(zip(DS_ORDER, ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9"]))
 DS_MARKER = dict(zip(DS_ORDER, ["o", "s", "^", "D", "v", "P"]))
-RHO = {"creditcard": 0.172, "ieee_cis": 3.500, "baf": 1.100, "paysim": 0.129,
-       "elliptic": 9.760, "giveme": 6.684}                       # Table 1, in %
+RHO = {"creditcard": 0.173, "ieee_cis": 3.499, "baf": 1.103, "paysim": 0.129,
+       "elliptic": 9.761, "giveme": 6.684}                       # Table 1, in %
 CAL = [("none", "raw"), ("temperature", "TS"), ("beta", "Beta")]
 CAL_COLOR = {"none": "#0072B2", "temperature": "#D55E00", "beta": "#009E73"}
 REG_COLOR = {"fixed": "#0072B2", "linear": "#D55E00", "log": "#009E73"}
@@ -132,7 +132,7 @@ ax.text(fx, fy + fh / 2 - 1.6, "advisory only — does not halt the pipeline",
         ha="center", va="center", fontsize=6.6, color="#8a5a00", style="italic")
 ax.add_patch(FancyArrowPatch((fx, y0 - 9.6), (fx, fy + fh + 0.4), arrowstyle="-|>",
                              mutation_scale=8, color="#c77800", lw=0.9))
-ax.text(1, 1.0, r"Key: $\Delta$ = ROC-AUC $-$ PR-AUC is rank-invariant (Prop. 3.1). Recalibration cannot "
+ax.text(1, 1.0, r"Key: $\Delta$ = ROC-AUC $-$ PR-AUC is rank-invariant (Prop. 3.1). A strictly increasing recalibration cannot "
         r"change $\Delta$; it can change which grid thresholds are reachable (Prop. 3.3). "
         r"$\mathcal{D}_{\rm te}$ is read once, at step 7.", fontsize=6.9, color="#333", va="bottom")
 save(fig, "Fig2")
@@ -148,7 +148,7 @@ for i, d in enumerate(DS_ORDER):
         v = M.loc[d, m]
         if pd.isna(v):
             ax.add_patch(Rectangle((j - .5, i - .5), 1, 1, facecolor="white", edgecolor="none"))
-            ax.text(j, i, "not run", ha="center", va="center", color="grey", fontsize=7)
+            ax.text(j, i, "n/a", ha="center", va="center", color="grey", fontsize=7)
             continue
         ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=8,
                 color="white" if v < 0.55 else "black")

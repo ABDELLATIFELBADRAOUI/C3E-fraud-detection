@@ -82,8 +82,7 @@ def cost_amount_log(amounts: np.ndarray,
     More robust to extreme transaction amounts.
     C_FP^(i) = cfp (constant).
     """
-    c_fn = np.log1p(np.maximum(amounts, 0.0))
-    c_fn = np.maximum(c_fn, 1.0)   # floor at 1
+    c_fn = np.log1p(np.maximum(amounts, 0.0))   # no floor (v2.1; v2.0 floored at 1)
     c_fp = np.full(len(amounts), cfp)
     return c_fn, c_fp
 
@@ -259,8 +258,11 @@ def calibration_metrics(y: np.ndarray,
     bins   = np.linspace(0, 1, n_bins+1)
     ece    = 0.0
     mce    = 0.0
-    for lo, hi in zip(bins[:-1], bins[1:]):
-        mask = (p >= lo) & (p < hi)
+    for j, (lo, hi) in enumerate(zip(bins[:-1], bins[1:])):
+        # bins [0,0.1), ..., [0.8,0.9), [0.9,1]: the last bin is closed at 1 (v2.1;
+        # v2.0 left it open and so dropped scores equal to 1 from the ECE)
+        upper = (p <= hi) if j == n_bins - 1 else (p < hi)
+        mask = (p >= lo) & upper
         if mask.sum() == 0:
             continue
         acc  = float(y[mask].mean())
