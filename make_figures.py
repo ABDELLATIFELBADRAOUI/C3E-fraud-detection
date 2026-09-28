@@ -80,64 +80,85 @@ ax.legend(handles=[Line2D([], [], marker=DS_MARKER[d], ls="", color=DS_COLOR[d],
 save(fig, "Fig1")
 
 # =============================== Fig. 2 ======================================
+# Compact layout: the drawing fills the figure (no in-figure title, the caption carries
+# it), x and y share one scale (1 unit = 1/13.5 in), and the key sits beside the flag box.
 C_TR, C_VAL, C_TE, C_ALL = "#2b6cb0", "#c77800", "#2f8f4e", "#6b6b6b"
-fig, ax = plt.subplots(figsize=(9.6, 4.5)); ax.axis("off"); ax.grid(False)
-ax.set_xlim(0, 100); ax.set_ylim(0, 58)
-ax.text(50, 56.5, "Chronological Cost-Calibrated Evaluation (C3E) — Algorithm 1",
-        ha="center", va="center", fontsize=10.5, fontweight="bold")
-ax.text(1, 53.3, "Chronological order  →", fontsize=7.5, color="grey")
+W_IN, X_MAX, Y_MAX = 7.4, 100.0, 37.2
+fig = plt.figure(figsize=(W_IN, W_IN * Y_MAX / X_MAX))
+ax = fig.add_axes([0, 0, 1, 1]); ax.axis("off"); ax.grid(False)
+ax.set_xlim(0, X_MAX); ax.set_ylim(0, Y_MAX)
+ax.text(0.8, 36.1, "Chronological order  →", fontsize=7.5, color="grey", va="center")
+BAR_Y0, BAR_H = 30.6, 4.2
 for lab, x0, x1, col in [(r"$\mathcal{D}_{\rm tr}$  TRAIN 60%", 0, 60, C_TR),
                          (r"$\mathcal{D}_{\rm val}$  VAL 20%", 60, 80, C_VAL),
                          (r"$\mathcal{D}_{\rm te}$  TEST 20%", 80, 100, C_TE)]:
-    ax.add_patch(Rectangle((x0 + 0.8, 47), (x1 - x0) - 1.6, 5, facecolor=col, edgecolor="none"))
-    ax.text((x0 + x1) / 2, 49.5, lab, ha="center", va="center", color="white", fontsize=8.2,
-            fontweight="bold")
+    ax.add_patch(Rectangle((x0 + 0.8, BAR_Y0), (x1 - x0) - 1.6, BAR_H, facecolor=col, edgecolor="none"))
+    ax.text((x0 + x1) / 2, BAR_Y0 + BAR_H / 2, lab, ha="center", va="center", color="white",
+            fontsize=8.2, fontweight="bold")
 steps = [  # (number, box text, data read, colour, what it prevents)
     (1, "Sort by\ntimestamp",                          "all rows",                   C_ALL, "no future→past\nleakage"),
     (2, "Split\n60 / 20 / 20",                         "all rows",                   C_ALL, "time-ordered,\nnot random"),
     (3, "Fit\npreprocessing\non TRAIN",                r"$\mathcal{D}_{\rm tr}$ only", C_TR, "no preprocessing\nleakage"),
-    (4, "Train $f$\non TRAIN",                         r"$\mathcal{D}_{\rm tr}$ only", C_TR, "model never sees\nval / test"),
+    (4, "Train $f$\non TRAIN",                         r"$\mathcal{D}_{\rm tr}$ only", C_TR, "test block never\nused in fitting"),
     (5, "Recalibrate\non VAL,\ncompute $\\Delta$",     r"$\mathcal{D}_{\rm val}$",     C_VAL, "calibrate before\nthresholding"),
-    (6, "Select $\\tau^*$\non VAL,\nfreeze",           r"$\mathcal{D}_{\rm val}$",     C_VAL, "locks the\noperating point"),
-    (7, "Evaluate at\nfrozen $\\tau^*$\non TEST",      r"$\mathcal{D}_{\rm te}$, once", C_TE, "no test-set\noverfitting"),
+    (6, "Select $\\hat{\\tau}^*$\non VAL,\nfreeze",     r"$\mathcal{D}_{\rm val}$",     C_VAL, "locks the\noperating point"),
+    (7, "Evaluate at\nfrozen $\\hat{\\tau}^*$\non TEST", r"$\mathcal{D}_{\rm te}$, once", C_TE, "no test-set\noverfitting"),
 ]
-xs = np.linspace(7.5, 92.5, 7); bw, bh, y0 = 13.2, 12.6, 26
+xs = np.linspace(7.2, 92.8, 7); bw, bh, y0, PAD = 12.6, 9.6, 17.0, 0.25
 for (n, title, data, col, prevents), x in zip(steps, xs):
-    ax.add_patch(FancyBboxPatch((x - bw / 2, y0), bw, bh, boxstyle="round,pad=0.25",
-                                facecolor="white", edgecolor=col, linewidth=1.5))
-    ax.add_patch(Circle((x - bw / 2 + 1.5, y0 + bh - 1.5), 1.35, facecolor=col, edgecolor="none"))
+    ax.add_patch(FancyBboxPatch((x - bw / 2, y0), bw, bh, boxstyle=f"round,pad={PAD}",
+                                facecolor="white", edgecolor=col, linewidth=1.4))
+    ax.add_patch(Circle((x - bw / 2 + 1.5, y0 + bh - 1.5), 1.3, facecolor=col, edgecolor="none"))
     ax.text(x - bw / 2 + 1.5, y0 + bh - 1.5, str(n), color="white", ha="center", va="center",
             fontsize=7, fontweight="bold")
-    ax.text(x, y0 + bh / 2 - 0.9, title, ha="center", va="center", fontsize=7.0, linespacing=1.15)
-    ax.text(x, y0 - 1.2, data, ha="center", va="top", fontsize=7.2, color=col)
-    ax.text(x, y0 - 4.6, prevents, ha="center", va="top", fontsize=6.3, color="#a33",
+    ax.text(x, y0 + bh / 2 - 0.5, title, ha="center", va="center", fontsize=7.0, linespacing=1.15)
+    ax.text(x, y0 - 0.9, data, ha="center", va="top", fontsize=7.2, color=col)
+    ax.text(x, y0 - 3.4, prevents, ha="center", va="top", fontsize=6.3, color="#a33",
             style="italic", linespacing=1.05)
 for xa, xb in zip(xs[:-1], xs[1:]):
-    ax.add_patch(FancyArrowPatch((xa + bw / 2 + 0.3, y0 + bh / 2), (xb - bw / 2 - 0.3, y0 + bh / 2),
-                                 arrowstyle="-|>", mutation_scale=9, color="#444", lw=0.9))
-for (n, _, _, col, _), x in zip(steps, xs):
-    ax.add_patch(FancyArrowPatch((x, 46.6), (x, y0 + bh + 0.6), arrowstyle="-|>", mutation_scale=7,
-                                 color=col, lw=0.7, linestyle=(0, (2, 2))))
-zx0, zx1 = xs[2] - bw / 2 - 1.3, xs[3] + bw / 2 + 1.3
-ax.add_patch(Rectangle((zx0, y0 - 10.2), zx1 - zx0, bh + 12.2, fill=False, ls="--",
-                       edgecolor="#c0392b", lw=1.1))
-ax.text((zx0 + zx1) / 2, y0 + bh + 2.3, r"training-only fitting zone ($\mathcal{D}_{\rm tr}$ only)",
+    ax.add_patch(FancyArrowPatch((xa + bw / 2 + PAD, y0 + bh / 2), (xb - bw / 2 - PAD, y0 + bh / 2),
+                                 arrowstyle="-|>", mutation_scale=8, color="#444", lw=0.9,
+                                 shrinkA=0, shrinkB=0))
+# training-only zone around steps 3-4; its label sits inside the zone, under the notes
+zx0 = (xs[1] + xs[2]) / 2          # zone borders run midway between neighbouring boxes
+zx1 = (xs[3] + xs[4]) / 2
+zb, zt = 8.4, y0 + bh + PAD + 0.8
+ax.add_patch(Rectangle((zx0, zb), zx1 - zx0, zt - zb, fill=False, ls="--", edgecolor="#c0392b", lw=1.1))
+ax.text((zx0 + zx1) / 2, zb + 0.35, r"training-only fitting zone ($\mathcal{D}_{\rm tr}$ only)",
         ha="center", va="bottom", fontsize=7, color="#c0392b")
-fx, fy, fw, fh = xs[4], 4.6, 29, 7
-ax.add_patch(FancyBboxPatch((fx - fw / 2, fy), fw, fh, boxstyle="round,pad=0.25",
+for i, ((n, _, _, col, _), x) in enumerate(zip(steps, xs)):
+    end = zt + 0.25 if i in (2, 3) else y0 + bh + PAD + 0.3   # steps 3-4: into the zone
+    ax.add_patch(FancyArrowPatch((x, BAR_Y0 - 0.3), (x, end), arrowstyle="-|>", mutation_scale=7,
+                                 color=col, lw=0.7, linestyle=(0, (2, 2)), shrinkA=0, shrinkB=0))
+# bottom band: the key on the left, the flag box under steps 5-7
+fx0, fx1, fy, fh = 58.6, 99.2, 0.9, 6.8
+ax.add_patch(FancyBboxPatch((fx0, fy), fx1 - fx0, fh, boxstyle=f"round,pad={PAD}",
                             facecolor="#fdf2e9", edgecolor="#c77800", lw=1.1))
-ax.text(fx, fy + fh / 2 + 0.9, "if $\\Delta > \\delta^\\dagger$  →  flag for threshold review",
+ax.text((fx0 + fx1) / 2, fy + fh / 2 + 1.2, "if $\\Delta > \\delta^\\dagger$  →  flag for threshold review",
         ha="center", va="center", fontsize=7.4)
-ax.text(fx, fy + fh / 2 - 1.6, "advisory only — does not halt the pipeline",
+ax.text((fx0 + fx1) / 2, fy + fh / 2 - 1.3, "advisory only — does not halt the pipeline",
         ha="center", va="center", fontsize=6.6, color="#8a5a00", style="italic")
-ax.add_patch(FancyArrowPatch((fx, y0 - 9.6), (fx, fy + fh + 0.4), arrowstyle="-|>",
-                             mutation_scale=8, color="#c77800", lw=0.9))
-ax.text(1, 1.0, r"Key: $\Delta$ = ROC-AUC $-$ PR-AUC is rank-invariant (Prop. 3.1). A strictly increasing recalibration cannot "
-        r"change $\Delta$; it can change which grid thresholds are reachable (Prop. 3.3). "
-        r"$\mathcal{D}_{\rm te}$ is read once, at step 7.", fontsize=6.9, color="#333", va="bottom")
+ax.add_patch(FancyArrowPatch((xs[4], y0 - 6.2), (xs[4], fy + fh + PAD + 0.1), arrowstyle="-|>",
+                             mutation_scale=8, color="#c77800", lw=0.9, shrinkA=0, shrinkB=0))
+key = ax.text(0.8, fy + 0.6, "Key: $\\Delta$ = ROC-AUC $-$ PR-AUC is rank-invariant (Prop. 3.1). A strictly\n"
+              "increasing recalibration cannot change $\\Delta$; it can change which grid\n"
+              "thresholds are reachable (Prop. 3.3). $\\mathcal{D}_{\\rm te}$ is read once, at step 7.",
+              fontsize=6.9, color="#333", va="bottom", ha="left", linespacing=1.25)
+fig.canvas.draw()
+_inv = ax.transData.inverted()
+_kb = _inv.transform(key.get_window_extent())
+assert _kb[1][0] < fx0 - PAD - 0.5 and _kb[1][1] < zb, ("key overlaps", _kb)
 save(fig, "Fig2")
 
 # =============================== Fig. 3 ======================================
+def fmt_delta(v):
+    """Three decimals; four when the value was stored to four decimals and ends in 5,
+    where rounding to three decimals would be ambiguous (LR on Elliptic, 0.4025)."""
+    r4 = round(v * 1e4)
+    if abs(v * 1e4 - r4) < 1e-6 and r4 % 10 == 5:
+        return f"{v:.4f}"
+    return f"{v:.3f}"
+
 M = P.pivot(index="dataset", columns="model", values="delta").reindex(index=DS_ORDER, columns=MODEL_ORDER)
 fig, ax = plt.subplots(figsize=(6.4, 3.9)); ax.grid(False)
 im = ax.imshow(M.to_numpy(dtype=float), cmap="viridis", vmin=0.0, vmax=0.9, aspect="auto")
@@ -150,7 +171,7 @@ for i, d in enumerate(DS_ORDER):
             ax.add_patch(Rectangle((j - .5, i - .5), 1, 1, facecolor="white", edgecolor="none"))
             ax.text(j, i, "n/a", ha="center", va="center", color="grey", fontsize=7)
             continue
-        ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=8,
+        ax.text(j, i, fmt_delta(v), ha="center", va="center", fontsize=8,
                 color="white" if v < 0.55 else "black")
         if v > DELTA_STAR:
             ax.add_patch(Rectangle((j - .5, i - .5), 1, 1, fill=False, edgecolor="red", lw=1.5))

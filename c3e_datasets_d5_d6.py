@@ -161,15 +161,14 @@ def prepare_elliptic(
 # Key decisions:
 #   - Use cs-training.csv only (has labels)
 #   - No native timestamp → use row index as proxy time
-#     (rows are ordered as submitted, which correlates
-#      with application date — standard practice for this
-#      dataset in temporal evaluation literature)
+#     (an assumption: the true temporal order is unknown;
+#      see the paper's limitations)
 #   - Label: SeriousDlqin2yrs=1 → fraud/default=1
 #   - Drop "Unnamed: 0" index column
-#   - Drop balance columns with known issues:
-#     NumberOfTime30-59DaysPastDueNotWorse,
-#     NumberOfTime60-89DaysPastDueNotWorse
-#     (96-98 coded as "unknown" — impute with median)
+#   - Past-due counts (NumberOfTime30-59DaysPastDueNotWorse,
+#     NumberOfTime60-89DaysPastDueNotWorse, NumberOfTimes90DaysLate)
+#     use 96/98 as special codes; they are capped at 30 below.
+#     Missing values are imputed with the training median in the pipeline.
 #   - amount_col = "MonthlyIncome" (proxy for cost weighting)
 # ============================================================
 

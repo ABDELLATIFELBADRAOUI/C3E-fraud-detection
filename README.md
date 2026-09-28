@@ -166,11 +166,17 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
 - **Threshold grid:** 1001 uniform points in [0, 1]; ties broken by the smallest
   threshold (`numpy.argmin`). Table 8 also reports the unique-score and
   quantile grids.
-- **Calibration:** none, Temperature Scaling, Beta Calibration. Both maps clip
+- **Calibration:** none, Temperature Scaling, Beta Calibration. The six-dataset benchmark
+  (Table 5) uses the raw scores; the maps are compared on D1 (Tables 7 and 8, Figs. 9 and 10).
+  Both maps clip
   their input to [ε, 1 − ε], ε = 1e-7, before taking logarithms, so as
   implemented they are non-decreasing but not injective (paper, Section 6.2).
 - **Δ is computed on raw validation scores**; only threshold selection uses the
   calibrated scores when calibration is enabled.
+- **Screening flag:** the column `miscalibrated` of the result files, and the console tag
+  `*** MISCALIBRATED`, mean Δ > δ† = 0.20, the paper's flag for threshold review
+  (Definition 3.2). Δ is rank-invariant and is not a calibration measure; the old names are
+  kept so that the saved files match the code that wrote them.
 - **Null-model cost:** every realised cost is compared with C_FN · N1_test, the
   cost of flagging nothing (750 on D1); a frozen threshold that flags no
   instance is reported as such, not as an improvement.
@@ -184,7 +190,9 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
 - **DNN rows:** `c3e_all_seeds_raw.csv` and `c3e_seed_aggregated.csv` also hold the rows of a
   DNN that the paper does not report; all paper tables exclude them.
 - **Saved scores:** `results/scores/` holds the D1 scores of the six configurations at seed 42
-  (Tables 7–9, Figs. 9–11); for the six-dataset benchmark the release keeps, per seed, the
+  (Tables 7–9, Figs. 9–11), obtained by refitting them with the pipeline of this release and
+  saving the scores with `numpy.savez`; for LR, RF, XGBoost and LightGBM they reproduce the
+  seed-42 rows of `c3e_all_seeds_raw.csv`; for the six-dataset benchmark the release keeps, per seed, the
   frozen threshold and the confusion counts (`c3e_all_seeds_raw.csv`), not the scores.
 
 ---
@@ -204,7 +212,10 @@ jupyter nbconvert --to notebook --execute C3E_master_notebook.ipynb
   Proposition 3.3(ii).
 * **Figures.** `make_figures_5_6_11.py` added; Fig. 7 uses the prevalences of Table 1; Fig. 9
   shows the corrected ECE; Fig. 3 labels the pairs outside the six-dataset benchmark "n/a";
-  the key of Fig. 2 reads "A strictly increasing recalibration cannot change Δ".
+  Fig. 2 has a compact layout (no in-figure title; the key sits beside the flag box), writes the
+  frozen threshold as τ̂*, notes at step 4 that the test block is never used in fitting, and its
+  key reads "A strictly increasing recalibration cannot change Δ". Fig. 3 prints Δ to three
+  decimals, as Table 5 does, and LR on D5 as stored (0.4025, four decimals).
 * **requirements.txt** now pins the versions used for the paper (Table 4); gensim and
   tensorflow are listed as optional, since no result of the paper needs them.
 * **Master notebook.** Markdown only: release number, the withdrawn text probe, and the source

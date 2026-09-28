@@ -1,8 +1,8 @@
 # ============================================================
 # c3e_framework.py  —  Single-file, zero-import-error version
 # Chronological Cost-Calibrated Evaluation (C3E)
-# Paper: "Beyond ROC-AUC: A Calibration-Gap Diagnostic
-#         Protocol for Cost-Sensitive Fraud Detection"
+# Paper: "The ROC-PR Divergence and Threshold Transferability:
+#         A Cost-Calibrated Evaluation Protocol for Fraud Detection"
 # Authors: Elbadraoui et al.
 # Usage:
 #   python c3e_framework.py                        (all datasets)
@@ -83,7 +83,8 @@ DATASET_REGISTRY: Dict[str, DatasetSpec] = {
 
 CFN_DEFAULT   = 10.0
 CFP_DEFAULT   =  1.0
-DELTA_THRESH  =  0.20   # miscalibration flag (Definition 2)
+DELTA_THRESH  =  0.20   # screening level delta-dagger (paper, Definition 3.2); the flag
+                        # is stored as "miscalibrated" for historical reasons (see README)
 ALPHA, BETA, GAMMA = 0.60, 0.20, 0.20
 SEED          = 42
 
@@ -412,7 +413,7 @@ class C3EResult:
     pr_auc:        float
     # Diagnostic
     delta:         float    # Δ = ROC-AUC − PR-AUC  (on val)
-    miscalibrated: bool     # Δ > δ* = 0.20
+    miscalibrated: bool     # Δ > δ† = 0.20: screening flag, not a calibration verdict
     # Threshold analysis
     tau_star:      float    # empirical cost-optimal threshold
     tau_bayes:     float    # theoretical Bayes threshold 1/(1+r)
